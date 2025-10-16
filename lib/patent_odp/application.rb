@@ -101,7 +101,7 @@ module PatentODP
     def extract_names(items, name_field)
       return [] if items.nil?
 
-      Array(items).map { |item| item[name_field] }.compact
+      Array(items).map { |item| item[name_field] if item.is_a?(Hash) }.compact
     end
   end
 end

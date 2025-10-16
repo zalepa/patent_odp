@@ -26,7 +26,10 @@ module PatentODP
     # @raise [UnauthorizedError] if API key is invalid
     # @raise [RateLimitError] if rate limit is exceeded
     # @raise [ServerError] for server errors
+    # @raise [ArgumentError] if application_number is invalid
     def application(application_number)
+      validate_application_number!(application_number)
+
       response = @connection.get(application_number) do |req|
         req.headers["X-API-KEY"] = @api_key
       end
@@ -35,6 +38,21 @@ module PatentODP
     end
 
     private
+
+    # Validate application number to prevent path traversal and injection attacks
+    # @param application_number [String] The application number to validate
+    # @raise [ArgumentError] if application_number is invalid
+    def validate_application_number!(application_number)
+      raise ArgumentError, "Application number cannot be nil" if application_number.nil?
+      raise ArgumentError, "Application number must be a string" unless application_number.is_a?(String)
+      raise ArgumentError, "Application number cannot be empty" if application_number.strip.empty?
+
+      # Application numbers should only contain alphanumeric characters and basic punctuation
+      # This prevents path traversal attacks like "../../../etc/passwd"
+      unless application_number.match?(/\A[\w\-]+\z/)
+        raise ArgumentError, "Application number contains invalid characters. Only alphanumeric, underscore, and hyphen allowed."
+      end
+    end
 
     def build_connection
       Faraday.new(url: BASE_URL) do |conn|
@@ -86,6 +104,8 @@ module PatentODP
 
       # Pass the full wrapper data so Application can access events, etc if needed
       Application.new(wrapper_data, application_number)
+    rescue JSON::ParserError => e
+      raise APIError, "Failed to parse API response: #{e.message}"
     end
   end
 end
