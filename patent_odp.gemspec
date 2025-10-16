@@ -9,7 +9,8 @@ Gem::Specification.new do |spec|
   spec.email = ["george.zalepa@gmail.com"]
 
   spec.summary = "Ruby wrapper for the USPTO Open Data Portal (ODP) API"
-  spec.description = "A Ruby gem for interacting with the USPTO's Open Data Portal API, providing access to patent file wrapper data including applications, documents, and search functionality."
+  spec.description = "A Ruby gem for interacting with the USPTO's Open Data Portal API, " \
+                     "providing access to patent file wrapper data."
   spec.homepage = "https://github.com/zalepa/patent_odp"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
@@ -17,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/zalepa/patent_odp"
   spec.metadata["changelog_uri"] = "https://github.com/zalepa/patent_odp/blob/main/CHANGELOG.md"
+  spec.metadata["rubygems_mfa_required"] = "true"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.

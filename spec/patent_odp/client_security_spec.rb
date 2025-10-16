@@ -11,7 +11,7 @@ RSpec.describe PatentODP::Client do
       end
 
       it "rejects non-string application numbers" do
-        expect { client.application(12345) }.to raise_error(ArgumentError, /must be a string/)
+        expect { client.application(12_345) }.to raise_error(ArgumentError, /must be a string/)
       end
 
       it "rejects empty application numbers" do

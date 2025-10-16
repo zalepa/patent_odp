@@ -49,9 +49,10 @@ module PatentODP
 
       # Application numbers should only contain alphanumeric characters and basic punctuation
       # This prevents path traversal attacks like "../../../etc/passwd"
-      unless application_number.match?(/\A[\w\-]+\z/)
-        raise ArgumentError, "Application number contains invalid characters. Only alphanumeric, underscore, and hyphen allowed."
-      end
+      return if application_number.match?(/\A[\w-]+\z/)
+
+      raise ArgumentError,
+            "Application number contains invalid characters. Only alphanumeric, underscore, and hyphen allowed."
     end
 
     def build_connection

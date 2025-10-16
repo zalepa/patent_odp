@@ -4,7 +4,7 @@ RSpec.describe PatentODP::Configuration do
   describe "security validations" do
     describe "#api_key!" do
       it "rejects non-string API keys" do
-        config = described_class.new(api_key: 12345)
+        config = described_class.new(api_key: 12_345)
         expect { config.api_key! }.to raise_error(
           PatentODP::ConfigurationError,
           /API key is required/
