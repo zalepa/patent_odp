@@ -77,4 +77,22 @@ RSpec.describe PatentODP::Configuration do
       expect(config.timeout).to eq(60)
     end
   end
+
+  describe "#retry_enabled" do
+    it "defaults to true" do
+      config = described_class.new
+      expect(config.retry_enabled).to be true
+    end
+
+    it "can be set to false" do
+      config = described_class.new(retry_enabled: false)
+      expect(config.retry_enabled).to be false
+    end
+
+    it "can be customized after initialization" do
+      config = described_class.new
+      config.retry_enabled = false
+      expect(config.retry_enabled).to be false
+    end
+  end
 end

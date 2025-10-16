@@ -11,9 +11,11 @@ module PatentODP
 
     # @param api_key [String, nil] API key for authentication. If nil, uses global config.
     # @param timeout [Integer, nil] Request timeout in seconds. If nil, uses global config.
-    def initialize(api_key: nil, timeout: nil)
+    # @param retry_enabled [Boolean, nil] Enable retry logic. If nil, uses global config.
+    def initialize(api_key: nil, timeout: nil, retry_enabled: nil)
       @api_key = api_key || PatentODP.configuration.api_key!
       @timeout = timeout || PatentODP.configuration.timeout
+      @retry_enabled = retry_enabled.nil? ? PatentODP.configuration.retry_enabled : retry_enabled
       @connection = build_connection
     end
 
@@ -36,12 +38,14 @@ module PatentODP
 
     def build_connection
       Faraday.new(url: BASE_URL) do |conn|
-        conn.request :retry, {
-          max: 3,
-          interval: 0.5,
-          backoff_factor: 2,
-          retry_statuses: [429, 500, 502, 503, 504]
-        }
+        if @retry_enabled
+          conn.request :retry, {
+            max: 3,
+            interval: 0.5,
+            backoff_factor: 2,
+            retry_statuses: [429, 500, 502, 503, 504]
+          }
+        end
         conn.adapter Faraday.default_adapter
         conn.options.timeout = @timeout
         conn.options.open_timeout = 10

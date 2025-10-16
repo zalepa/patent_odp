@@ -95,19 +95,25 @@ RSpec.describe PatentODP::Client do
     end
 
     it "raises RateLimitError when rate limited" do
+      # Disable retries for faster test execution
+      client_no_retry = described_class.new(api_key: api_key, retry_enabled: false)
+
       stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456")
         .with(headers: { "X-API-KEY" => api_key })
         .to_return(status: 429, body: { "error" => "Rate limit exceeded" }.to_json)
 
-      expect { client.application("16123456") }.to raise_error(PatentODP::RateLimitError)
+      expect { client_no_retry.application("16123456") }.to raise_error(PatentODP::RateLimitError)
     end
 
     it "raises ServerError for 5xx errors" do
+      # Disable retries for faster test execution
+      client_no_retry = described_class.new(api_key: api_key, retry_enabled: false)
+
       stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456")
         .with(headers: { "X-API-KEY" => api_key })
         .to_return(status: 500, body: { "error" => "Internal server error" }.to_json)
 
-      expect { client.application("16123456") }.to raise_error(PatentODP::ServerError)
+      expect { client_no_retry.application("16123456") }.to raise_error(PatentODP::ServerError)
     end
   end
 end
