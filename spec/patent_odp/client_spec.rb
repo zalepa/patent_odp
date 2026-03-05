@@ -116,4 +116,150 @@ RSpec.describe PatentODP::Client do
       expect { client_no_retry.application("16123456") }.to raise_error(PatentODP::ServerError)
     end
   end
+
+  describe "#documents" do
+    let(:application_number) { "16123456" }
+    let(:mock_documents_response) do
+      {
+        "documentBag" => [
+          {
+            "applicationNumberText" => "16123456",
+            "officialDate" => "2024-06-15",
+            "documentIdentifier" => "DOC-001",
+            "documentCode" => "CTNF",
+            "documentCodeDescriptionText" => "Non-Final Rejection",
+            "directionCategory" => "Outgoing",
+            "downloadOptionBag" => [
+              {
+                "mimeTypeIdentifier" => "PDF",
+                "downloadUrl" => "https://api.uspto.gov/download/001",
+                "pageTotalQuantity" => 12
+              }
+            ]
+          },
+          {
+            "applicationNumberText" => "16123456",
+            "officialDate" => "2024-03-01",
+            "documentIdentifier" => "DOC-002",
+            "documentCode" => "SPEC",
+            "documentCodeDescriptionText" => "Specification",
+            "directionCategory" => "Incoming",
+            "downloadOptionBag" => [
+              {
+                "mimeTypeIdentifier" => "PDF",
+                "downloadUrl" => "https://api.uspto.gov/download/002",
+                "pageTotalQuantity" => 25
+              }
+            ]
+          }
+        ]
+      }
+    end
+
+    it "returns an array of Document objects" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456/documents")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 200, body: mock_documents_response.to_json, headers: { "Content-Type" => "application/json" })
+
+      docs = client.documents(application_number)
+      expect(docs).to be_an(Array)
+      expect(docs.length).to eq(2)
+      expect(docs.first).to be_a(PatentODP::Document)
+    end
+
+    it "parses document fields correctly" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456/documents")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 200, body: mock_documents_response.to_json, headers: { "Content-Type" => "application/json" })
+
+      doc = client.documents(application_number).first
+      expect(doc.document_code).to eq("CTNF")
+      expect(doc.description).to eq("Non-Final Rejection")
+      expect(doc.official_date).to eq(Date.new(2024, 6, 15))
+      expect(doc.outgoing?).to be true
+      expect(doc.pdf_download_url).to eq("https://api.uspto.gov/download/001")
+    end
+
+    it "returns empty array when no documents" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456/documents")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 200, body: { "documentBag" => [] }.to_json, headers: { "Content-Type" => "application/json" })
+
+      expect(client.documents(application_number)).to eq([])
+    end
+
+    it "raises NotFoundError for 404" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/99999999/documents")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 404, body: { "error" => "Not found" }.to_json)
+
+      expect { client.documents("99999999") }.to raise_error(PatentODP::NotFoundError)
+    end
+
+    it "validates application number" do
+      expect { client.documents("../etc/passwd") }.to raise_error(ArgumentError)
+    end
+  end
+
+  describe "#transactions" do
+    let(:application_number) { "16123456" }
+    let(:mock_transactions_response) do
+      {
+        "eventDataBag" => [
+          {
+            "eventCode" => "CTNF",
+            "eventDescriptionText" => "Non-Final Rejection mailed",
+            "eventDate" => "2024-06-15"
+          },
+          {
+            "eventCode" => "A...",
+            "eventDescriptionText" => "Response filed",
+            "eventDate" => "2024-09-10"
+          }
+        ]
+      }
+    end
+
+    it "returns an array of Transaction objects" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456/transactions")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 200, body: mock_transactions_response.to_json, headers: { "Content-Type" => "application/json" })
+
+      txns = client.transactions(application_number)
+      expect(txns).to be_an(Array)
+      expect(txns.length).to eq(2)
+      expect(txns.first).to be_a(PatentODP::Transaction)
+    end
+
+    it "parses transaction fields correctly" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456/transactions")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 200, body: mock_transactions_response.to_json, headers: { "Content-Type" => "application/json" })
+
+      txn = client.transactions(application_number).first
+      expect(txn.event_code).to eq("CTNF")
+      expect(txn.description).to eq("Non-Final Rejection mailed")
+      expect(txn.event_date).to eq(Date.new(2024, 6, 15))
+    end
+
+    it "returns empty array when no transactions" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/16123456/transactions")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 200, body: { "eventDataBag" => [] }.to_json, headers: { "Content-Type" => "application/json" })
+
+      expect(client.transactions(application_number)).to eq([])
+    end
+
+    it "raises NotFoundError for 404" do
+      stub_request(:get, "https://api.uspto.gov/api/v1/patent/applications/99999999/transactions")
+        .with(headers: { "X-API-KEY" => api_key })
+        .to_return(status: 404, body: { "error" => "Not found" }.to_json)
+
+      expect { client.transactions("99999999") }.to raise_error(PatentODP::NotFoundError)
+    end
+
+    it "validates application number" do
+      expect { client.transactions("../etc/passwd") }.to raise_error(ArgumentError)
+    end
+  end
 end

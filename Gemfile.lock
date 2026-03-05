@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    patent_odp (0.1.0)
+    patent_odp (0.2.0)
       faraday (~> 2.0)
       faraday-retry (~> 2.0)
 
@@ -93,9 +93,6 @@ GEM
       lint_roller (~> 1.1)
       rubocop (>= 1.75.0, < 2.0)
       rubocop-ast (>= 1.44.0, < 2.0)
-    rubocop-rspec (3.7.0)
-      lint_roller (~> 1.1)
-      rubocop (~> 1.72, >= 1.72.1)
     ruby-progressbar (1.13.0)
     simplecov (0.22.0)
       docile (~> 1.1)
@@ -125,7 +122,6 @@ DEPENDENCIES
   rspec (~> 3.0)
   rubocop (~> 1.21)
   rubocop-performance (~> 1.21)
-  rubocop-rspec (~> 3.0)
   simplecov (~> 0.22)
   webmock (~> 3.0)
 

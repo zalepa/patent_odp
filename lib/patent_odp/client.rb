@@ -37,6 +37,42 @@ module PatentODP
       handle_response(response, application_number)
     end
 
+    # Fetch documents for a patent application
+    # @param application_number [String] The patent application number
+    # @return [Array<Document>] Array of Document objects
+    # @raise [NotFoundError] if application doesn't exist
+    # @raise [UnauthorizedError] if API key is invalid
+    # @raise [RateLimitError] if rate limit is exceeded
+    # @raise [ServerError] for server errors
+    # @raise [ArgumentError] if application_number is invalid
+    def documents(application_number)
+      validate_application_number!(application_number)
+
+      response = @connection.get("#{application_number}/documents") do |req|
+        req.headers["X-API-KEY"] = @api_key
+      end
+
+      handle_documents_response(response)
+    end
+
+    # Fetch transaction history for a patent application
+    # @param application_number [String] The patent application number
+    # @return [Array<Transaction>] Array of Transaction objects
+    # @raise [NotFoundError] if application doesn't exist
+    # @raise [UnauthorizedError] if API key is invalid
+    # @raise [RateLimitError] if rate limit is exceeded
+    # @raise [ServerError] for server errors
+    # @raise [ArgumentError] if application_number is invalid
+    def transactions(application_number)
+      validate_application_number!(application_number)
+
+      response = @connection.get("#{application_number}/transactions") do |req|
+        req.headers["X-API-KEY"] = @api_key
+      end
+
+      handle_transactions_response(response)
+    end
+
     private
 
     # Validate application number to prevent path traversal and injection attacks
@@ -72,19 +108,38 @@ module PatentODP
     end
 
     def handle_response(response, application_number)
+      handle_error_status(response)
+      parse_application_response(response, application_number)
+    end
+
+    def handle_documents_response(response)
+      handle_error_status(response)
+
+      data = JSON.parse(response.body)
+      doc_bag = data["documentBag"] || []
+      doc_bag.map { |doc_data| Document.new(doc_data) }
+    rescue JSON::ParserError => e
+      raise APIError, "Failed to parse API response: #{e.message}"
+    end
+
+    def handle_transactions_response(response)
+      handle_error_status(response)
+
+      data = JSON.parse(response.body)
+      event_bag = data["eventDataBag"] || []
+      event_bag.map { |event_data| Transaction.new(event_data) }
+    rescue JSON::ParserError => e
+      raise APIError, "Failed to parse API response: #{e.message}"
+    end
+
+    def handle_error_status(response)
       case response.status
-      when 200
-        parse_application_response(response, application_number)
-      when 401
-        raise UnauthorizedError, "Invalid API key"
-      when 404
-        raise NotFoundError, "Application not found"
-      when 429
-        raise RateLimitError, "API rate limit exceeded"
-      when 500..599
-        raise ServerError, "Server error: #{response.status}"
-      else
-        raise APIError, "Unexpected response: #{response.status}"
+      when 200 then nil
+      when 401 then raise UnauthorizedError, "Invalid API key"
+      when 404 then raise NotFoundError, "Application not found"
+      when 429 then raise RateLimitError, "API rate limit exceeded"
+      when 500..599 then raise ServerError, "Server error: #{response.status}"
+      else raise APIError, "Unexpected response: #{response.status}"
       end
     end
 

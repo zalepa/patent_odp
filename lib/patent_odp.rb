@@ -4,6 +4,8 @@ require_relative "patent_odp/version"
 require_relative "patent_odp/errors"
 require_relative "patent_odp/configuration"
 require_relative "patent_odp/application"
+require_relative "patent_odp/document"
+require_relative "patent_odp/transaction"
 require_relative "patent_odp/client"
 
 module PatentODP
